@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>大学入試 英熟語マスター (1-20) - GAMBA</title>
+    <style>
+        :root {
+            --header-bg: #e3f2fd; 
+            --accent: #007bff;
+            --success: #c8e6c9;
+            --bg: #ffffff;
+            --text: #333;
+        }
+        body { font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif; background-color: #fcfcfc; color: var(--text); margin: 0; padding: 0; }
+        
+        .header-plate { background-color: var(--header-bg); padding: 20px; text-align: center; border-bottom: 2px solid #bbdefb; }
+        .header-plate h1 { margin: 0 0 15px 0; font-size: 2.0em; color: #444; font-weight: normal; }
+
+        /* ナビゲーションリンク */
+        .nav-bar { display: flex; justify-content: center; gap: 10px; }
+        .nav-link { text-decoration: none; border: 1px solid #ddd; background: white; padding: 6px 15px; border-radius: 30px; cursor: pointer; transition: 0.3s; font-size: 0.9em; color: #333; }
+        .nav-link.active { background-color: var(--accent); color: white; border-color: var(--accent); }
+        .nav-link.passed { background-color: #4caf50 !important; color: white !important; border-color: #4caf50 !important; }
+
+        /* 固定エリア (語群・コントロール) */
+        .sticky-container { position: sticky; top: 0; z-index: 1000; background: white; box-shadow: 0 4px 10px rgba(0,0,0,0.1); padding: 10px 20px; }
+        .controls { display: flex; justify-content: space-between; align-items: center; max-width: 1100px; margin: 0 auto 10px; }
+        .btn-challenge { background: #ff9800; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 1.0em; font-weight: bold; }
+        .timer { font-family: monospace; font-size: 1.4em; color: #555; font-weight: bold; }
+
+        #word-bank { display: flex; flex-wrap: wrap; gap: 8px; background: #f0f7ff; padding: 12px; border-radius: 10px; border: 1px solid #d0e0f0; min-height: 40px; justify-content: center; max-width: 1100px; margin: 0 auto; }
+        .word-item { background: white; padding: 5px 12px; border-radius: 4px; cursor: pointer; border: 1px solid #b0d0f0; font-weight: bold; color: var(--accent); font-size: 0.95em; }
+        .word-item.selected { background: var(--accent); color: white; }
+
+        /* 問題エリア */
+        .quiz-container { max-width: 1100px; margin: 20px auto; padding: 0 20px; }
+        .quiz-row { margin-bottom: 30px; border-bottom: 1px solid #f0f0f0; padding-bottom: 15px; }
+        .phrase-line { font-size: 1.2em; margin-bottom: 8px; display: flex; align-items: center; gap: 15px; }
+        .ans-box { border: 1px solid #999; min-width: 160px; height: 34px; display: inline-flex; align-items: center; justify-content: center; border-radius: 4px; background: #fff; cursor: pointer; font-weight: bold; color: #007bff; }
+        .sentence-line { font-size: 1.2em; color: #444; display: flex; align-items: center; flex-wrap: wrap; line-height: 1.5; }
+        .sq-box { border: 1px solid #999; padding: 1px 10px; min-width: 90px; text-align: center; background: #f9f9f9; border-radius: 3px; font-weight: bold; margin: 0 5px; color: #007bff; }
+        .translation { color: #000; font-weight: bold; font-size: 1.0em; margin-left: 15px; } 
+
+        .correct-bg { background-color: var(--success) !important; border-color: #4caf50 !important; color: #1b5e20 !important; }
+        .pop-msg { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 20px 60px; border-radius: 15px; color: white; font-size: 2.5em; font-weight: bold; z-index: 2000; display: none; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+        .pop-correct { background: rgba(76, 175, 80, 0.95); }
+        .pop-miss { background: rgba(244, 67, 54, 0.95); }
+    </style>
+</head>
+<body>
+
+<div id="pop-correct" class="pop-msg pop-correct">正解！</div>
+<div id="pop-miss" class="pop-msg pop-miss">オシイ！</div>
+
+<div class="header-plate">
+    <h1>大学入試 英熟語マスター</h1>
+    <div class="nav-bar">
+        <a href="ejukugo_h01.html" class="nav-link active">1～20</a>
+        <a href="ejukugo_h02.html" class="nav-link">21～40</a>
+        <a href="ejukugo_h03.html" class="nav-link">41～60</a>
+        <a href="ejukugo_h04.html" class="nav-link">61～80</a>
+        <a href="ejukugo_h05.html" class="nav-link">81～100</a>
+    </div>
+</div>
+
+<div class="sticky-container">
+    <div class="controls">
+        <button class="btn-challenge" id="challenge-btn" onclick="startChallenge()">チャレンジ開始</button>
+        <div class="timer" id="timer">00:00</div>
+        <button onclick="resetGame()" style="cursor:pointer; border:none; background:none; text-decoration:underline; color:#999;">リセット</button>
+    </div>
+    <div id="word-bank">「チャレンジ開始」をクリックしてください</div>
+</div>
+
+<div class="quiz-container" id="quiz-area"></div>
+
+<script>
+const masterData = [
+    { id: 1, phrase: "depend on", display: "depends on", meaning: "～に依存する、～次第だ", sentence: "It □ the weather.", trans: "それは天気次第です。" },
+    { id: 2, phrase: "take part in", display: "took part in", meaning: "～に参加する", sentence: "Many students □ the event.", trans: "多くの学生がその行事に参加した。" },
+    { id: 3, phrase: "make up for", display: "make up for", meaning: "～の埋め合わせをする", sentence: "I must □ lost time.", trans: "私は遅れを取り戻さなければならない。" },
+    { id: 4, phrase: "put up with", display: "put up with", meaning: "～を我慢する", sentence: "I can't □ his noise.", trans: "彼の騒音には我慢できない。" },
+    { id: 5, phrase: "carry out", display: "carried out", meaning: "～を実行する", sentence: "They □ the plan.", trans: "彼らは計画を実行した。" },
+    { id: 6, phrase: "come up with", display: "come up with", meaning: "～を思いつく", sentence: "She □ a great idea.", trans: "彼女は素晴らしいアイデアを思いついた。" },
+    { id: 7, phrase: "bring about", display: "brings about", meaning: "～を引き起こす", sentence: "Science □ changes.", trans: "科学は変化をもたらす。" },
+    { id: 8, phrase: "result in", display: "resulted in", meaning: "～という結果になる", sentence: "The accident □ a fire.", trans: "その事故は火災という結果になった。" },
+    { id: 9, phrase: "look up to", display: "look up to", meaning: "～を尊敬する", sentence: "I □ my father.", trans: "私は父を尊敬している。" },
+    { id: 10, phrase: "look down on", display: "look down on", meaning: "～を軽蔑する", sentence: "Don't □ others.", trans: "他人を軽蔑してはいけない。" },
+    { id: 11, phrase: "run out of", display: "ran out of", meaning: "～を使い果たす", sentence: "We □ gas.", trans: "ガソリンを使い果たした。" },
+    { id: 12, phrase: "catch up with", display: "catch up with", meaning: "～に追いつく", sentence: "I'll □ you later.", trans: "後で君に追いつくよ。" },
+    { id: 13, phrase: "keep up with", display: "keep up with", meaning: "～に遅れずについていく", sentence: "It's hard to □ the news.", trans: "ニュースについていくのは大変だ。" },
+    { id: 14, phrase: "do away with", display: "did away with", meaning: "～を廃止する", sentence: "They □ the rule.", trans: "彼らはその規則を廃止した。" },
+    { id: 15, phrase: "take advantage of", display: "take advantage of", meaning: "～を利用する", sentence: "You should □ it.", trans: "それを利用すべきだ。" },
+    { id: 16, phrase: "turn out to be", display: "turned out to be", meaning: "～だと判明する", sentence: "The rumor □ false.", trans: "噂は嘘だと分かった。" },
+    { id: 17, phrase: "account for", display: "account for", meaning: "～を説明する、占める", sentence: "Women □ 40% of the staff.", trans: "女性がスタッフの40%を占める。" },
+    { id: 18, phrase: "attribute A to B", display: "attributes", meaning: "AをBのせいにする", sentence: "He □ success to luck.", trans: "彼は成功を運のおかげだとしている。" },
+    { id: 19, phrase: "in terms of", display: "In terms of", meaning: "～の観点から", sentence: "□ money, it's good.", trans: "お金の面では、それは良い。" },
+    { id: 20, phrase: "by means of", display: "by means of", meaning: "～によって", sentence: "We express thoughts □ words.", trans: "言葉によって思考を表現する。" }
+];
+
+let isChallenge = false;
+let selectedWord = null;
+let startTime, timerInterval;
+let solvedCount = 0;
+
+function init() { render(false); }
+
+function render(challenge) {
+    const area = document.getElementById('quiz-area');
+    area.innerHTML = '';
+    masterData.forEach(item => {
+        const row = document.createElement('div');
+        row.className = 'quiz-row';
+        const parts = item.sentence.split('□');
+        row.innerHTML = `
+            <div class="phrase-line">
+                <span>${item.id} ${item.meaning}</span>
+                <div class="ans-box" id="ans-${item.id}" onclick="check(${item.id})">${challenge ? '' : item.phrase}</div>
+            </div>
+            <div class="sentence-line">
+                <span>${parts[0]}</span>
+                <span class="sq-box" id="sq-${item.id}">${challenge ? '□' : item.display}</span>
+                <span>${parts[1]}</span>
+                <span class="translation">${item.trans}</span>
+            </div>
+        `;
+        area.appendChild(row);
+    });
+}
+
+function startChallenge() {
+    isChallenge = true;
+    solvedCount = 0;
+    document.getElementById('challenge-btn').disabled = true;
+    render(true);
+    const bank = document.getElementById('word-bank');
+    bank.innerHTML = '';
+    const shuffle = [...masterData].sort(() => Math.random() - 0.5);
+    shuffle.forEach(item => {
+        const d = document.createElement('div');
+        d.className = 'word-item';
+        d.innerText = item.phrase;
+        d.onclick = () => {
+            document.querySelectorAll('.word-item').forEach(w => w.classList.remove('selected'));
+            d.classList.add('selected');
+            selectedWord = item.phrase;
+        };
+        bank.appendChild(d);
+    });
+    startTime = Date.now();
+    timerInterval = setInterval(() => {
+        const diff = Math.floor((Date.now() - startTime) / 1000);
+        const m = String(Math.floor(diff / 60)).padStart(2, '0');
+        const s = String(diff % 60).padStart(2, '0');
+        document.getElementById('timer').innerText = `${m}:${s}`;
+    }, 1000);
+}
+
+function check(id) {
+    if(!isChallenge || !selectedWord) return;
+    const item = masterData.find(d => d.id === id);
+    if(selectedWord === item.phrase) {
+        showPop('pop-correct');
+        document.getElementById(`ans-${id}`).innerText = item.phrase;
+        document.getElementById(`ans-${id}`).classList.add('correct-bg');
+        document.getElementById(`sq-${id}`).innerText = item.display;
+        document.getElementById(`sq-${id}`).classList.add('correct-bg');
+        document.querySelectorAll('.word-item').forEach(w => {
+            if(w.innerText === selectedWord) w.style.visibility = 'hidden';
+        });
+        selectedWord = null;
+        solvedCount++;
+        if(solvedCount === masterData.length) {
+            clearInterval(timerInterval);
+            alert("合格です！");
+            document.getElementById('challenge-btn').disabled = false;
+            isChallenge = false;
+        }
+    } else { showPop('pop-miss'); }
+}
+
+function showPop(id) {
+    const el = document.getElementById(id);
+    el.style.display = 'block';
+    setTimeout(() => el.style.display = 'none', 800);
+}
+
+function resetGame() { if(confirm("リセットしますか？")) location.reload(); }
+
+init();
+</script>
+</body>
+</html>
